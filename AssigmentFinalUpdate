@@ -1,0 +1,422 @@
+import os
+import sys
+
+def clearScreen():
+    #Clears the console screen, so that the user can focus on
+    #  the current task without info   from previous outputs.
+    os.system("cls" if os.name == "nt" else "clear")
+
+def main():
+    #Runs the artefact management system."""
+    while True:
+        clearScreen()
+        displayMenu()
+        choice = input("Enter your choice (1-10): ").strip()
+
+        if choice == "1":
+            viewAllArtefacts()
+        elif choice == "2":
+            addArtefact()
+        elif choice == "3":
+            updateArtefactCondition()
+        elif choice == "4":
+            searchArtefact()
+        elif choice == "5":
+            lendArtefact()
+        elif choice == "6":
+            viewLoanedArtefacts()
+        elif choice == "7":
+            addComment()
+        elif choice == "8":
+            deleteArtefact()
+        elif choice == "9":
+            scheduleRestoration()
+        elif choice == "10":
+            exitProgram()
+        else:
+            print("Invalid choice. Please select an option from 1 to 10.")
+
+        waitForUser()
+
+def displayMenu():
+    #Displays the main menu of the artefact management system
+    print("\n--- LHC Artefact Management System ---")
+    print("1. View All Artefacts")
+    print("2. Add a New Artefact")
+    print("3. Update Artefact Condition")
+    print("4. Search for an Artefact")
+    print("5. Lend an Artefact")
+    print("6. View Loaned Artefacts")
+    print("7. Add a Comment")
+    print("8. Delete an Artefact")
+    print("9. Schedule an Artefact for Restoration")
+    print("10. Exit")
+    print("--------------------------------------")
+
+def waitForUser():
+    #Waits for the user before returning to the menu and allows
+    #them to read the output of their previous action
+    input("\nPress Enter to return to the menu.")
+
+def artefactInfo(category, origin, artefactDate, material):
+    #Creates a  dictionary details to store information for an artefact
+    return {
+        "category": category,
+        "origin": origin,
+        "date": artefactDate,
+        "material": material,
+        "location": "Not recorded",
+        "condition": "Not assessed",
+        "loaned": False,
+        "comments": {},
+        "restorationScheduled": False
+    }
+
+# Dictionary containing the artefacts
+artefacts = {
+    "Victorian Tea Set": artefactInfo(
+        "Household Items", "Not recorded", "Victorian era", "Not recorded"
+    ),
+    "Merchant Trade Token": artefactInfo(
+        "Historical and Cultural Items",
+        "Not recorded",
+        "Not recorded",
+        "Not recorded"
+    ),
+    "Carpenter's Mallet": artefactInfo(
+        "Tools and Equipment", "Not recorded", "Not recorded", "Wood"
+    ),
+    "Festival Garment": artefactInfo(
+        "Clothes", "Not recorded", "Not recorded", "Fabric"
+    ),
+    "Mayor's Correspondence": artefactInfo(
+        "Documents and Photographs",
+        "Not recorded",
+        "Not recorded",
+        "Paper and ink"
+    ),
+    "Copper Cooking Pot": artefactInfo(
+        "Household Items", "Not recorded", "Not recorded", "Copper"
+    ),
+    "Railway Station Photograph": artefactInfo(
+        "Documents and Photographs",
+        "Local area",
+        "Not recorded",
+        "Photographic paper"
+    ),
+    "Monastery Cross": artefactInfo(
+        "Historical and Cultural Items",
+        "Monastery",
+        "Not recorded",
+        "Not recorded"
+    ),
+    "Leather Tool Pouch": artefactInfo(
+        "Craft Items", "Not recorded", "Not recorded", "Leather"
+    )
+}
+
+# Categories accepted when adding an artefact
+categories = {
+    "clothes": "Clothes",
+    "documents and photographs": "Documents and Photographs",
+    "historical and cultural items": "Historical and Cultural Items",
+    "household items": "Household Items",
+    "tools and equipment": "Tools and Equipment",
+    "craft items": "Craft Items"
+}
+
+# Dictionary storing deleted artefact names and reasons
+# so allows the user to see what has been deleted and why
+deletionAttempt = {}
+deletionAttemptId = 1
+
+def findArtefact(searchName):
+    #Finds an artefact by usig the name and ingores case sensitivity
+    # Returns the artefact name if found, otherwise returns None.
+    for artefactName in artefacts:
+        if artefactName.casefold() == searchName.casefold():
+            return artefactName
+    return None
+
+def displayArtefact(artefactName):
+    #Displays all the details for one artefact
+    details = artefacts[artefactName]
+
+    print(f"\nName: {artefactName}")
+    print(f"Category: {details['category']}")
+    print(f"Origin: {details['origin']}")
+    print(f"Approximate date: {details['date']}")
+    print(f"Material: {details['material']}")
+    print(f"Location: {details['location']}")
+    print(f"Condition: {details['condition']}")
+
+    if details["loaned"]:
+        print("Loan status: On loan")
+        print(f"Going to: {details['loanDestination']}")
+        print(f"Loan duration: {details['loanDuration']}")
+        print(f"Taken by: {details['borrower']}")
+    else:
+        print("Loan status: Not on loan")
+
+    if details["comments"]:
+        print("Comments:")
+        for commentName in details["comments"]:
+            print(f"- {details['comments'][commentName]}")
+    else:
+        print("Comments: None")
+
+    if details["restorationScheduled"]:
+        print("Restoration status: Scheduled")
+        print(f"Pickup date: {details['pickupDate']}")
+        print(f"Going to: {details['restorationDestination']}")
+        print(f"Expected return date: {details['expectedReturnDate']}")
+    else:
+        print("Restoration status: Not scheduled")
+
+
+def viewAllArtefacts():
+    #Displays all artefacts
+    clearScreen()
+
+    if not artefacts:
+        print("There are no artefacts recorded.")
+    else:
+        print("\nArtefact Collection:")
+        for artefactName in artefacts:
+            displayArtefact(artefactName)
+            print("-----------------------------------")
+
+
+def addArtefact():
+    #Allows the user to add a new artefact
+    clearScreen()
+    artefactName = input("Enter the artefact name: ").strip()
+
+    if not artefactName:
+        print("The artefact name cannot be empty.")
+        return
+
+    if findArtefact(artefactName) is not None:
+        print("An artefact with this name already exists.")
+        return
+
+    print("\nAvailable categories:")
+    print("Clothes")
+    print("Documents and Photographs")
+    print("Historical and Cultural Items")
+    print("Household Items")
+    print("Tools and Equipment")
+    print("Craft Items")
+
+    categoryInput = input("Enter the category: ").strip().casefold()
+    category = categories.get(categoryInput)
+
+    if category is None:
+        print("Category not recognised.")
+        return
+
+    origin = input("Enter the origin place: ").strip()
+    artefactDate = input("Enter the approximate date: ").strip()
+    material = input("Enter the material: ").strip()
+    location = input("Enter the display or storage location: ").strip()
+    condition = input(
+        "Enter the condition (good, damage, or under repair): "
+    ).strip().casefold()
+
+    if not origin or not artefactDate or not material or not location:
+        print("Please complete all the artefact details.")
+        return
+
+    if (
+        condition != "good"
+        and condition != "damage"
+        and condition != "under repair"
+    ):
+        print("Invalid condition.")
+        return
+
+    artefacts[artefactName] = artefactInfo(
+        category, origin, artefactDate, material
+    )
+    artefacts[artefactName]["location"] = location
+    artefacts[artefactName]["condition"] = condition
+
+    print(f"'{artefactName}' was added successfully.")
+
+
+def updateArtefactCondition():
+    #Allows the user to update an artefact's condition
+    clearScreen()
+    searchName = input("Enter the artefact name: ").strip()
+    artefactName = findArtefact(searchName)
+
+    if artefactName is None:
+        print("Artefact not found.Please " \
+        "ensure you have entered the correct name.")
+        return
+
+    newCondition = input(
+        "Enter the new condition (good, damage, or under repair): "
+    ).strip().casefold()
+
+    if (
+        newCondition == "good"
+        or newCondition == "damage"
+        or newCondition == "under repair"):
+        artefacts[artefactName]["condition"] = newCondition
+        print("Condition updated successfully.")
+    else:
+        print("Invalid condition.")
+
+
+def searchArtefact():
+    #Allows the user to search for an artefact by name.
+    clearScreen()
+    searchName = input("Enter the artefact name to search for: ").strip()
+    artefactName = findArtefact(searchName)
+
+    if artefactName is None:
+        print("Artefact not found.")
+    else:
+        displayArtefact(artefactName)
+
+
+def lendArtefact():
+    #Records the destination, duration and borrower of an artefact
+    #so that it can be tracked while on loan
+    clearScreen()
+    searchName = input("Enter the artefact name to lend: ").strip()
+    artefactName = findArtefact(searchName)
+
+    if artefactName is None:
+        print("Artefact not found.")
+        return
+
+    details = artefacts[artefactName]
+
+    if details["loaned"]:
+        print("This artefact is already on loan.")
+        return
+
+    destination = input("Where is the artefact going? ").strip()
+    loanDuration = input("How long will it be loaned for? ").strip()
+    borrower = input("Who is taking the artefact? ").strip()
+
+    if not destination or not loanDuration or not borrower:
+        print("Please enter all the loan details.")
+        return
+
+    details["loanDestination"] = destination
+    details["loanDuration"] = loanDuration
+    details["borrower"] = borrower
+    details["loaned"] = True
+
+    print("Loan details recorded successfully.")
+
+
+def viewLoanedArtefacts():
+    #Displays the artefacts currently on loan
+    #so the user can see what items are out and where they are going
+    clearScreen()
+    foundArtefact = False
+
+    print("\nLoaned Artefacts:")
+
+    for artefactName in artefacts:
+        if artefacts[artefactName]["loaned"]:
+            displayArtefact(artefactName)
+            foundArtefact = True
+
+    if not foundArtefact:
+        print("There are no artefacts currently on loan.")
+
+
+def addComment():
+    #Adds a comment to an artefact's comments dictionary.
+    clearScreen()
+    searchName = input("Enter the artefact name: ").strip()
+    artefactName = findArtefact(searchName)
+
+    if artefactName is None:
+        print("Artefact not found.")
+        return
+
+    comment = input("Enter your comment: ").strip()
+
+    if not comment:
+        print("The comment cannot be empty.")
+        return
+
+    comments = artefacts[artefactName]["comments"]
+    commentName = f"Comment {len(comments) + 1}"
+    comments[commentName] = comment
+
+    print("Comment added successfully.")
+
+
+def deleteArtefact():
+    #Deletes an artefact and records the reason.
+    global deletionAttemptId
+
+    clearScreen()
+    searchName = input("Enter the artefact name to delete: ").strip()
+    artefactName = findArtefact(searchName)
+
+    if artefactName is None:
+        print("Artefact not found.")
+        return
+
+    reason = input("Why do you want to delete this artefact? ").strip()
+
+    if not reason:
+        print("A reason is required. The artefact was not deleted.")
+        return
+
+    deletionAttempt[deletionAttemptId] = {
+        "artefactName": artefactName,
+        "reason": reason
+    }
+
+    del artefacts[artefactName]
+    deletionAttemptId = deletionAttemptId + 1
+
+    print("Artefact deleted successfully.")
+
+
+def scheduleRestoration():
+    #Records restoration pickup, destination and expected return details.
+    clearScreen()
+    searchName = input("Enter the artefact name: ").strip()
+    artefactName = findArtefact(searchName)
+
+    if artefactName is None:
+        print("Artefact not found.")
+        return
+
+    pickupDate = input("When will the artefact be picked up? ").strip()
+    destination = input("Where is it going for restoration? ").strip()
+    expectedReturnDate = input(
+        "When is it expected to come back? "
+    ).strip()
+
+    if not pickupDate or not destination or not expectedReturnDate:
+        print("Please enter all the restoration details.")
+        return
+
+    details = artefacts[artefactName]
+    details["restorationScheduled"] = True
+    details["pickupDate"] = pickupDate
+    details["restorationDestination"] = destination
+    details["expectedReturnDate"] = expectedReturnDate
+
+    print("Restoration schedule recorded successfully.")
+
+
+def exitProgram():
+    #Exits the program and close the system. This is the final step in the program and allows the user to exit the program
+    print("Thank you for using the LHC Artefact Management System.")
+    print("Exiting the system. Have a great day!")
+
+    sys.exit()
+if __name__ == "__main__":
+    main()
